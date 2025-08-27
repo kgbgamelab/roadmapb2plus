@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Old Academy • Grammar & Speaking Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#21160e;              /* dark wood */
+    --bg-wood-2:#2a1f12;
+    --paper:#f7efdf;           /* parchment */
+    --ink:#1b1b1b;
+    --ink-soft:#443b32;
+    --gold:#c9a227;            /* brass/gold */
+    --accent:#8e6b2e;          /* dark brass */
+    --success:#236d36;
+    --danger:#8b2b2b;
+    --muted:#b7a88e;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--ink-soft); background:
+      radial-gradient(1200px 800px at 10% -10%, #3a2a17 0%, transparent 60%),
+      radial-gradient(1000px 700px at 110% 110%, #3a2a17 0%, transparent 40%),
+      repeating-linear-gradient( 90deg, var(--bg), var(--bg) 40px, var(--bg-wood-2) 41px, var(--bg-wood-2) 80px );
+    background-attachment: fixed, fixed, fixed; /* keep the wood lighting fixed while scrolling */
+    font-family:'Crimson Text', serif; font-size:18px; line-height:1.6;
+  }
+  header{
+    position:sticky; top:0; z-index:10; backdrop-filter:blur(6px);
+    background:linear-gradient(#2b2014cc,#20160fcc);
+    color:#f9f6ef; border-bottom:1px solid #00000055
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:20px}
+  .brand{display:flex; gap:16px; align-items:center; padding:14px 0}
+  .crest{width:44px;height:44px;border-radius:50%;
+         background:conic-gradient(from 0deg, #d9c79a, #b58a2b, #e2c671, #b58a2b, #d9c79a);
+         box-shadow:0 0 0 2px #0006, inset 0 0 8px #0008}
+  h1{font-family:'Playfair Display',serif; font-weight:700; letter-spacing:.5px; color:#f4e8c8; margin:0}
+  .sub{color:#e0d6bf}
+  .progress{height:6px;border-radius:999px; background:#0005; overflow:hidden}
+  .progress>span{display:block; height:100%; width:0%; background:linear-gradient(90deg, #9f7d2a, #e4c86b); transition:width .4s ease}
+
+  /* Cards */
+  section.card{margin:24px 0; border-radius:18px; background:var(--paper);
+    box-shadow:0 18px 30px #0007, 0 0 0 1px #0003;
+    padding:28px 26px; position:relative; overflow:hidden}
+  section.card::before{content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(600px 200px at -10% -10%, #fff6 0%, transparent 70%),
+               radial-gradient(600px 200px at 110% 110%, #fff6 0%, transparent 70%)}
+  section.card h2{font-family:'Playfair Display',serif; color:#2b2014; font-size:30px; margin:0 0 8px}
+  section.card h3{font-family:'Playfair Display',serif; color:#3b2c1c; margin:18px 0 6px; font-size:22px}
+  .meta{color:#6d5f50; font-style:italic; margin-bottom:14px}
+  .controls{display:flex; flex-wrap:wrap; gap:12px; margin-top:12px}
+  .btn{appearance:none; border:none; cursor:pointer; padding:10px 14px; border-radius:12px; font-weight:600;
+       background:linear-gradient(#f6e9c9,#eadcbf); color:#2e2417; box-shadow:0 1px 0 #fff inset, 0 2px 0 #0002, 0 10px 24px #0002;
+       transition:transform .12s ease, box-shadow .2s ease}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn.gold{background:linear-gradient(#e9d18d,#c0a24e); color:#21160e}
+  .btn.outline{background:#f5edd9; border:1px solid #bba772}
+
+  /* Theory blocks */
+  .theory{display:grid; gap:14px}
+  .theory .pattern{padding:14px; border:1px dashed #b8a57a; border-radius:12px; background:#fbf6ea}
+  .theory em{color:#1d3961; font-style:normal; font-weight:600}
+  .guide{display:grid; gap:8px; padding-left:18px}
+  .guide li{margin-left:18px}
+
+  /* Exercise 3 (match) */
+  .match-row{display:grid; grid-template-columns:28px 1fr 260px; gap:12px; align-items:center; padding:6px 0; border-bottom:1px solid #e8dcc3}
+  .match-row:last-child{border-bottom:none}
+  select{width:100%; padding:10px; border-radius:10px; border:1px solid #c7b588; background:#fffdf7}
+  .status{font-weight:700}
+  .correct{color:var(--success)}
+  .wrong{color:var(--danger)}
+
+  /* Exercise 2 (phrase windows) */
+  .grid{display:grid; grid-template-columns:repeat(5, 1fr); gap:12px}
+  .window{position:relative; height:120px; perspective:1000px; cursor:pointer}
+  .window .inner{position:absolute; inset:0; border-radius:14px; transform-style:preserve-3d; transition:transform .6s cubic-bezier(.2,.7,.2,1), box-shadow .3s; box-shadow:0 0 0 1px #fff inset, 0 10px 22px #0002; background:linear-gradient(#e7dcc3,#ddd0b3); border:1px solid #b9a67b}
+  .window:hover .inner{transform:translateY(-2px) rotateX(2deg)}
+  .window.open .inner{transform:rotateY(180deg)}
+  .window.done .inner{background:linear-gradient(#dfd5bf,#cbbf9f); opacity:.85}
+  .pane{position:absolute; inset:0; backface-visibility:hidden; display:flex; align-items:center; justify-content:center; padding:14px; color:#2b2014}
+  .pane.front{font-family:'Playfair Display',serif; font-size:26px}
+  .pane.back{transform:rotateY(180deg); font-size:18px; text-align:center}
+  .window.done .inner::after{content:""; position:absolute; inset:-2px; border-radius:14px; pointer-events:none; box-shadow:0 0 0 2px rgba(191,174,131,.6), 0 0 24px rgba(201,162,39,.45) inset; animation:glow 1.2s ease}
+  @keyframes glow{0%{opacity:0} 30%{opacity:1} 100%{opacity:.6}}
+
+  /* Exercise 5 story */
+  .story{background:#fbf6ea; border:1px solid #d9caa7; border-radius:14px; padding:14px}
+  .story b{color:#1d3961}
+  .choice{padding:2px 6px; border-radius:8px; background:#fff; border:1px solid #c7b588; margin:0 4px}
+
+  /* Exercise 6 quiz — single-card flow */
+  .q-one{padding:14px; border:1px solid #d8c7a1; border-radius:12px; background:#fffdf7}
+  .q-head{display:flex; align-items:center; justify-content:space-between; color:#6b5b45; margin-bottom:8px}
+  .q-def{font-size:20px}
+  .q-opts{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:10px}
+  .opt{padding:12px; border:1px solid #c7b588; border-radius:10px; cursor:pointer; background:#fff; transition:transform .12s}
+  .opt:active{transform:scale(.98)}
+  .opt.right{outline:3px solid var(--success)}
+  .opt.wrong{outline:3px solid var(--danger)}
+  .q-feedback{margin-top:10px; min-height:26px}
+  .pop{animation:pop .3s ease}
+  @keyframes pop{0%{transform:scale(.96); opacity:.5} 100%{transform:scale(1); opacity:1}}
+
+  /* Speaking clouds */
+  .clouds{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .cloud{padding:14px 16px; border-radius:20px; background:linear-gradient(#fff,#f3ede0); border:1px solid #d0c2a2; cursor:pointer; transition:transform .15s}
+  .cloud:hover{transform:translateY(-1px)}
+  .cloud.selected{background:linear-gradient(#f6efe0,#eaddc0); box-shadow:0 0 0 2px #c5ad6a inset}
+  .cloud.done{opacity:.65; text-decoration:line-through}
+
+  /* Work situations */
+  .work li{margin:8px 0; padding:8px; background:#fffdf6; border:1px solid #e2d6b8; border-radius:10px}
+  .toggle{display:inline-block; padding:2px 8px; border-radius:8px; border:1px solid #c7b588; background:#fff; cursor:pointer; transition:transform .1s}
+  .toggle:active{transform:scale(.98)}
+  .toggle.active{outline:2px solid #b08a2a}
+
+  .result{padding:10px 12px; background:#f1ead8; border:1px solid #d6c69f; border-radius:10px; margin-top:12px}
+  .key{display:none; margin-top:10px; padding:10px; background:#fff; border:1px dashed #bfae83; border-radius:10px}
+  .key.show{display:block}
+  .small{font-size:.95rem; color:#6b5b45}
+</style>
+</head>
+<body>
+  <header>
+    <div class="wrap brand">
+      <div class="crest" aria-hidden="true"></div>
+      <div>
+        <h1>Old Academy — Grammar & Speaking Game</h1>
+        <div class="sub">Cleft sentences • Vocabulary • Narrative tenses • Exaggeration • Work situations</div>
+      </div>
+    </div>
+    <div class="wrap"><div class="progress" aria-hidden="true"><span id="progressBar"></span></div></div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- 1. Cleft sentences — THEORY -->
+    <section class="card" data-ex="theory1">
+      <h2>1A • Cleft sentences — theory</h2>
+      <div class="meta">We use cleft sentences to focus on a part of the message. Typical openers: <em>What...</em>, <em>The thing (that)...</em>, <em>One thing (that)...</em>, <em>What ... most is ...</em></div>
+      <div class="theory">
+        <div class="pattern">
+          <h3>How it works</h3>
+          <ul class="guide">
+            <li>There is a <b>main clause</b> and a <b>dependent</b> clause; the important part is fronted.</li>
+          </ul>
+        </div>
+        <div class="pattern">
+          <h3>Examples (from the page)</h3>
+          <ul class="guide">
+            <li><i>Gardening's very relaxing. That's why I love it.</i> → <b>The thing I really love about gardening is that</b> it's relaxing. / <b>... is how</b> relaxing it is.</li>
+            <li><i>The teacher's very encouraging, which is great.</i> → <b>What's great about the class is</b> (the fact) that the teacher is very encouraging. / <b>What's great about the class is how</b> encouraging the teacher is.</li>
+            <li><i>The idea of getting covered in mud has always put me off playing rugby.</i> → <b>One thing that's always put me off playing rugby is</b> the idea of getting covered in mud. / <b>... is how</b> muddy you'd get.</li>
+            <li><i>The class was great. It really helped me let off steam.</i> → <b>What I liked most about the class was</b> (the fact) that it helped me let off steam. / <b>What was great about the class was how</b> it helped me let off steam.</li>
+            <li>For feelings: <b>What annoys me most is</b> the cost / <b>... is how</b> expensive it is these days. • <b>What I love most about it is the fact that</b> it's easy to do. / <b>... is how</b> easy it is to do.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Phrase windows (oral) -->
+    <section class="card" data-ex="phrases">
+      <h2>1B • Phrase bank — flip a card & answer orally</h2>
+      <div class="meta">Click a number to flip the card. Click again to close and mark as done.</div>
+      <div class="grid" id="phraseGrid"></div>
+      <div class="controls">
+        <button class="btn outline" id="resetPhrases">Reset</button>
+      </div>
+    </section>
+
+    <!-- 3. Vocabulary match (only task 1 from screen 3) -->
+    <section class="card" data-ex="match">
+      <h2>2 • Vocabulary match (only Task 1)</h2>
+      <div class="meta">Match each definition with the bolded term from the phrase bank.</div>
+      <div id="matchRows"></div>
+      <div class="controls">
+        <button class="btn gold" id="checkMatch">Check</button>
+        <button class="btn outline" id="showKeyMatch">Show key</button>
+      </div>
+      <div class="result" id="resMatch" aria-live="polite"></div>
+      <div class="key" id="keyMatch"></div>
+    </section>
+
+    <!-- 4. Narrative tenses — THEORY -->
+    <section class="card" data-ex="theory2">
+      <h2>3 • Narrative tenses — theory</h2>
+      <div class="theory">
+        <div class="pattern">
+          <h3>Past simple</h3>
+          <ul class="guide">
+            <li>Past habits or a sequence of completed actions.</li>
+            <li><em>This couple pulled over, got out of their car and offered to help.</em></li>
+          </ul>
+        </div>
+        <div class="pattern">
+          <h3>Past continuous</h3>
+          <ul class="guide">
+            <li>Actions in progress around another past action.</li>
+            <li><em>I was working for a rival company when we first met.</em></li>
+            <li><em>He was sprinting for the bus and he ran into me and knocked me over.</em></li>
+            <li>Two actions in progress: <em>While I was waiting, I was doing a crossword.</em></li>
+          </ul>
+        </div>
+        <div class="pattern">
+          <h3>Past perfect</h3>
+          <ul class="guide">
+            <li>Completed before another point in the past.</li>
+            <li><em>I got talking to this woman on the plane and it turned out we'd been to the same school!</em></li>
+          </ul>
+        </div>
+        <div class="pattern">
+          <h3>Past perfect continuous</h3>
+          <ul class="guide">
+            <li>Actions that were in progress before, or continued up to, another past action; focus on duration/reason.</li>
+            <li><em>Gina recommended a place to stay, which was good because I'd been looking for somewhere for ages without success.</em></li>
+            <li>With <em>after/before</em> the past perfect isn't always necessary: <em>After I had spoken / I spoke to him I felt a lot calmer.</em></li>
+            <li><em>Before we spoke I had been having / was having some doubts about it.</em></li>
+          </ul>
+        </div>
+        <div class="pattern">
+          <h3>Present tenses in narratives</h3>
+          <ul class="guide">
+            <li>To add immediacy: <em>Then at the next stop this couple get on and the man's lying there... They start asking questions... And no one knows.</em></li>
+            <li>Reported speech follows sequence of tenses: <em>He said he worked for a bank.</em> • <em>She said she'd been waiting for ages.</em></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Story — choose the correct alternatives -->
+    <section class="card" data-ex="story">
+      <h2>4 • Choose the correct alternatives to complete the story</h2>
+      <div class="story" id="storyBlock"></div>
+      <div class="controls">
+        <button class="btn gold" id="checkStory">Check</button>
+        <button class="btn outline" id="showKeyStory">Show key</button>
+      </div>
+      <div class="result" id="resStory" aria-live="polite"></div>
+      <div class="key" id="keyStory"></div>
+    </section>
+
+    <!-- 6. Word quiz — single card flow -->
+    <section class="card" data-ex="quiz">
+      <h2>5 • Word quiz</h2>
+      <div id="quizOne" class="q-one">
+        <div class="q-head"><div id="qStep">Question 1</div><div id="qProgress">0/0</div></div>
+        <div class="q-def" id="qDef"></div>
+        <div class="q-opts" id="qOpts"></div>
+        <div class="q-feedback" id="qFb"></div>
+        <div class="controls"><button class="btn outline" id="qNext" style="display:none">Next</button> <button class="btn outline" id="qShowKey" style="display:none">Show key</button></div>
+        <div class="result" id="qResult"></div>
+        <div class="key" id="keyQuiz"></div>
+      </div>
+    </section>
+
+    <!-- 7. Exaggeration — THEORY -->
+    <section class="card" data-ex="theory3">
+      <h2>6 • Exaggeration — theory</h2>
+      <div class="theory">
+        <div class="pattern">
+          <h3>Four common ways to exaggerate</h3>
+          <ul class="guide">
+            <li>Times, cost, distance, amount bigger/worse than real: <em>I spend half my life</em> trying to fix this machine! • It cost her <em>a small fortune</em>, that bag.</li>
+            <li>Repetition with <em>and</em>: He kept going <em>on and on and on</em>. • I've waited <em>years and years</em> for this.</li>
+            <li>Comparisons: It's <em>like</em> the North Pole in that back room. • He looked <em>like/as if/as though</em> he hadn't slept for weeks.</li>
+            <li>Death metaphors: I'm <em>dying</em> for a coffee. • It's <em>murder</em> trying to find a place to park round there.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Speaking — choose any 8 and mark done -->
+    <section class="card" data-ex="speaking">
+      <h2>7 • Speaking — choose any eight</h2>
+      <div class="meta">Click to select; click again to mark as done. No timer.</div>
+      <div class="clouds" id="clouds"></div>
+      <div class="controls">
+        <button class="btn outline" id="resetClouds">Reset</button>
+      </div>
+    </section>
+
+    <!-- 9. Work situations — interactive (auto-check) -->
+    <section class="card" data-ex="work">
+      <h2>8 • Work situations — choose the correct alternative</h2>
+      <ol class="work" id="workList"></ol>
+      <div class="controls">
+        <button class="btn gold" id="checkWork">Check</button>
+        <button class="btn outline" id="showKeyWork">Show key</button>
+      </div>
+      <div class="result" id="resWork"></div>
+      <div class="key" id="keyWork"></div>
+    </section>
+
+  </main>
+
+<script>
+// ---------- Progress
+const sections = [...document.querySelectorAll('section.card')];
+const bar = document.getElementById('progressBar');
+const updateProgress = () => {
+  const done = sections.filter(s => s.dataset.done === '1').length;
+  bar.style.width = Math.round((done/sections.length)*100) + '%';
+};
+function markDone(sectionEl){ sectionEl.dataset.done = '1'; updateProgress(); }
+
+// ---------- (2) Phrase windows with flip
+const phraseItems = [
+  'enjoy about studying English',
+  'huge amount of hype',
+  'a popular keep-fit activity',
+  "pastime I've never tried",
+  'do to help remember new vocabulary',
+  "couldn't stand when I was younger",
+  'fancy doing this weekend',
+  'admire in people',
+  'found interesting at school',
+  'is great about living here',
+  'a lot of locals do at weekends',
+  'puts people off performing for others',
+  'made me choose this course',
+  'was nice about being a child',
+  'should spend more time doing',
+  "people don't talk about enough",
+  'always find encouraging',
+  'many people are concerned about',
+  'most blockbusters have in common',
+  'used to spend hours doing as a child',
+  'effective study strategy',
+  'a lot of people take seriously',
+  'helps people switch off',
+  'not really into',
+  "don't have any patience for",
+  "I've always liked",
+  'appreciate in a friend',
+  'has grown on me',
+  'really unusual to see around here',
+  'I watched recently'
+];
+const phraseGrid = document.getElementById('phraseGrid');
+phraseItems.forEach((txt,i)=>{
+  const w = document.createElement('div');
+  w.className = 'window';
+  w.innerHTML = `<div class="inner">
+      <div class="pane front">${i+1}</div>
+      <div class="pane back">${txt}</div>
+    </div>`;
+  w.addEventListener('click',()=>{
+    if(!w.classList.contains('open') && !w.classList.contains('done')){
+      w.classList.add('open'); // flip to back
+    } else if(w.classList.contains('open')){
+      w.classList.remove('open');
+      w.classList.add('done'); // mark done
+    } else {
+      w.classList.remove('done'); // reset
+    }
+  });
+  phraseGrid.appendChild(w);
+});
+
+document.getElementById('resetPhrases').onclick = ()=>{
+  document.querySelectorAll('.window').forEach(w=>w.classList.remove('open','done'));
+};
+
+// ---------- (3) Match definitions to bold terms
+const matchData = [
+  ['relax','switch off'],
+  ['the publicity and excitement','hype'],
+  ['terrible at','hopeless at'],
+  ['very successful film, usually one that is full of action or adventure','blockbuster'],
+  ['hobby','pastime'],
+  ['to get rid of anger, excitement or energy','let off steam'],
+  ['would like to start spending time doing something new','fancy taking up'],
+  ['sports in which you fight with your hands and feet','martial arts'],
+  ['confidence-giving','encouraging'],
+  ['a type of word puzzle','crosswords'],
+  ['entertaining other people','performing'],
+  ['an adjective meaning exercise','keep-fit']
+];
+const matchOptions = [...new Set(matchData.map(x=>x[1]))];
+const matchRows = document.getElementById('matchRows');
+matchData.forEach((row,idx)=>{
+  const wrap = document.createElement('div');
+  wrap.className = 'match-row';
+  const label = String.fromCharCode(97+idx);
+  wrap.innerHTML = `<div>${label}.</div><div>${row[0]}</div>`;
+  const sel = document.createElement('select');
+  sel.innerHTML = `<option value="">— choose —</option>` + matchOptions.map(o=>`<option>${o}</option>`).join('');
+  sel.dataset.correct = row[1];
+  wrap.appendChild(sel);
+  matchRows.appendChild(wrap);
+});
+const resMatch = document.getElementById('resMatch');
+const keyMatch = document.getElementById('keyMatch');
+document.getElementById('checkMatch').onclick = ()=>{
+  let right=0; let total=0;
+  document.querySelectorAll('#matchRows select').forEach(sel=>{
+    total++; const ok = sel.value === sel.dataset.correct;
+    sel.style.outline = ok? '3px solid #236d36' : '3px solid #8b2b2b';
+    if(ok) right++;
+  });
+  resMatch.textContent = `Score: ${right} / ${total}`;
+  markDone(document.querySelector('[data-ex="match"]'));
+};
+document.getElementById('showKeyMatch').onclick = ()=>{
+  keyMatch.classList.toggle('show');
+  keyMatch.innerHTML = '<b>Key:</b> ' + matchData.map((r,i)=>`${String.fromCharCode(97+i)} → <b>${r[1]}</b>`).join('; ');
+};
+
+// ---------- (5) Story with choices
+const storySentences = [
+  [1,['sat','was sitting'],1],
+  [2,['heard','was hearing'],0],
+  [3,['had started','started'],0],
+  [4,["had been","had been being"],0],
+  [5,["couldn't","wasn't being able"],0],
+  [6,['realised','was realising'],0],
+  [7,['came','was coming'],1],
+  [8,['turned','was turning'],0],
+  [9,['remembered','had been remembering'],0],
+  [10,['played','had been playing'],1],
+  [11,["'d changed","'d been changing"],0],
+  [12,['switched','was switching'],0],
+  [13,['were always asking','had been always asking'],0],
+  [14,["'d brought","'d been bringing"],0],
+];
+const storyText = `I <b data-i="1"></b> in the middle of my first English class at university, when suddenly I <b data-i="2"></b> the most unexpected sound: a cat! Everyone <b data-i="3"></b> laughing and looking around for the animal. Even the teacher, who <b data-i="4"></b> in the middle of explaining a grammar point, <b data-i="5"></b> to keep a straight face. When I <b data-i="6"></b> the sound <b data-i="7"></b> from my own bag, I <b data-i="8"></b> bright red. I suddenly <b data-i="9"></b> that my flatmate <b data-i="10"></b> on my phone that morning. Obviously, she <b data-i="11"></b> the ring tone as a practical joke. I <b data-i="12"></b> it off as quickly as I could, but for many weeks afterwards, my classmates <b data-i="13"></b> whether I <b data-i="14"></b> any pets to class in my bag that day.`;
+const storyBlock = document.getElementById('storyBlock');
+storyBlock.innerHTML = storyText;
+storySentences.forEach(s=>{
+  const slot = storyBlock.querySelector(`[data-i="${s[0]}"]`);
+  slot.innerHTML = `<label class="choice"><input type="radio" name="c${s[0]}" value="0"> ${s[1][0]}</label> / <label class="choice"><input type="radio" name="c${s[0]}" value="1"> ${s[1][1]}</label>`;
+});
+document.getElementById('checkStory').onclick = ()=>{
+  let right=0; let total=storySentences.length;
+  storySentences.forEach(s=>{
+    const picked = document.querySelector(`input[name="c${s[0]}"]:checked`);
+    const labels = storyBlock.querySelectorAll(`label.choice input[name="c${s[0]}"]`);
+    labels.forEach(l=>{
+      l.parentElement.style.outline = '';
+      if(parseInt(l.value)===s[2]) l.parentElement.style.outline = '2px solid #236d36';
+    });
+    if(picked && parseInt(picked.value)===s[2]) right++;
+  });
+  document.getElementById('resStory').textContent = `Score: ${right} / ${total}`;
+  markDone(document.querySelector('[data-ex="story"]'));
+};
+document.getElementById('showKeyStory').onclick = ()=>{
+  const k = storySentences.map(s=>s[2]===0? s[1][0] : s[1][1]).join(' | ');
+  const box = document.getElementById('keyStory');
+  box.classList.toggle('show');
+  box.innerHTML = '<b>Key:</b> ' + k;
+};
+
+// ---------- (6) Word quiz — single-card progressive flow
+const quizData = [
+  {def:'A disappointment; something that makes you feel let down after high expectations.',ans:'letdown',opts:['uplift','letdown','windfall','turnout']},
+  {def:'A period of training with an employer that teaches you a trade.',ans:'apprenticeship',opts:['apprenticeship','intern','shift','fellowship']},
+  {def:'The expression of deep sorrow after someone has died.',ans:'mourning',opts:['warning','yearning','mourning','adoring']},
+  {def:'A very enthusiastic review.',ans:'rave',opts:['rant','rave','rumour','reviewer']},
+  {def:'Left somewhere without help or the ability to move.',ans:'stranded',opts:['grounded','stranded','parked','isolated']},
+  {def:'To make someone feel less sad; to console.',ans:'comfort',opts:['comfort','bother','ignore','cheer']},
+  {def:'Expert skill or knowledge in a particular field.',ans:'expertise',opts:['exposure','experience','expertise','expense']},
+  {def:'Friendly and inviting towards other people.',ans:'welcoming',opts:['welcoming','reserved','hostile','formal']},
+  {def:'Difficult or unpleasant; not smooth.',ans:'rough',opts:['rough','bright','light','soft']},
+  {def:'Feeling a great need or having little hope, often due to a bad situation.',ans:'desperate',opts:['desperate','hopeful','casual','stubborn']},
+  {def:'Move a vehicle to the side of the road and stop.',ans:'pull over',opts:['run over','pull off','pull over','pull up to']},
+  {def:'A written statement showing how much money you owe for goods or services.',ans:'bill',opts:['checklist','quote','bill','budget']},
+  {def:'To look after a child for a short time while the parents are out.',ans:'babysit',opts:['childcare','babysit','mourn','board']},
+  {def:'What a word, sign, or event expresses or refers to.',ans:'meaning',opts:['meaning','saying','context','memory']}
+];
+let qIndex = 0; let qScore = 0; let locked = false;
+const qStep = document.getElementById('qStep');
+const qProgress = document.getElementById('qProgress');
+const qDef = document.getElementById('qDef');
+const qOpts = document.getElementById('qOpts');
+const qFb = document.getElementById('qFb');
+const qNext = document.getElementById('qNext');
+const qShowKey = document.getElementById('qShowKey');
+const qResult = document.getElementById('qResult');
+const keyQuiz = document.getElementById('keyQuiz');
+
+function renderQuestion(){
+  locked = false; qFb.textContent=''; qNext.style.display='none';
+  const total = quizData.length; qProgress.textContent = `${qIndex}/${total}`;
+  qStep.textContent = `Question ${qIndex+1}`;
+  const q = quizData[qIndex];
+  qDef.textContent = q.def;
+  qDef.classList.add('pop'); setTimeout(()=>qDef.classList.remove('pop'),300);
+  qOpts.innerHTML = '';
+  q.opts.forEach(o=>{
+    const b = document.createElement('button'); b.type='button'; b.className='opt'; b.textContent=o;
+    b.onclick = ()=> handlePick(b,o,q.ans);
+    qOpts.appendChild(b);
+  });
+}
+function handlePick(btn,value,answer){
+  if(locked) return; locked = true;
+  const opts = [...qOpts.querySelectorAll('.opt')];
+  if(value===answer){
+    btn.classList.add('right'); qFb.textContent = 'Correct!'; qScore++;
+    setTimeout(()=>{ nextQuestion(); }, 700);
+  } else {
+    btn.classList.add('wrong');
+    opts.find(o=>o.textContent===answer).classList.add('right');
+    qFb.innerHTML = `Answer: <b>${answer}</b>`;
+    qNext.style.display='inline-block';
+  }
+}
+function nextQuestion(){
+  qIndex++;
+  if(qIndex<quizData.length){ renderQuestion(); }
+  else { endQuiz(); }
+}
+function endQuiz(){
+  const pct = Math.round((qScore/quizData.length)*100);
+  qDef.textContent = 'Well done!';
+  qOpts.innerHTML = '';
+  qFb.textContent = '';
+  qResult.textContent = `Mastery: ${pct}% (${qScore}/${quizData.length})`;
+  qShowKey.style.display='inline-block';
+  markDone(document.querySelector('[data-ex="quiz"]'));
+}
+qNext.onclick = ()=>{ nextQuestion(); };
+qShowKey.onclick = ()=>{
+  keyQuiz.classList.toggle('show');
+  keyQuiz.innerHTML = '<b>Key:</b> ' + quizData.map((q,i)=>`${i+1} → <b>${q.ans}</b>`).join('; ');
+};
+// init
+renderQuestion();
+
+// ---------- (8) Speaking clouds (choose any 8, then mark done)
+const speakingPrompts = [
+  'A skill that takes hours and hours to learn',
+  "A food you'd kill for right now",
+  'A chore or job you spend half your life doing',
+  'Something that costs a small fortune',
+  "A place you know that's like the Arctic",
+  "A reminder you've been given thousands of times",
+  "A place you know that's like an oven",
+  'Something that could make you die of boredom',
+  "Someone you've known for years and years",
+  "A food you're dying to try",
+  'Something that makes you rush around like a mad person',
+  "A topic you tend to go on and on about"
+];
+const clouds = document.getElementById('clouds');
+speakingPrompts.forEach((p)=>{
+  const c = document.createElement('div');
+  c.className = 'cloud'; c.textContent = p;
+  c.onclick = ()=>{
+    if(!c.classList.contains('selected')){ c.classList.add('selected'); }
+    else if(!c.classList.contains('done')){ c.classList.add('done'); }
+    else { c.classList.remove('selected','done'); }
+  };
+  clouds.appendChild(c);
+});
+document.getElementById('resetClouds').onclick = ()=>{
+  document.querySelectorAll('.cloud').forEach(c=>c.classList.remove('selected','done'));
+};
+
+// ---------- (9) Work situations interactive
+const workItems = [
+  ['Your co-worker <b>speaks/goes</b> on and on about how incompetent the boss is.', 'goes'],
+  ['A customer <b>undermines/underlines</b> your service with an awful online review.', 'undermines'],
+  ['Your colleagues keep unfairly pointing the <b>hand/finger</b> of blame at one employee for everything that goes wrong.', 'finger'],
+  ['You have too many <b>pointless/pointed</b> meetings.', 'pointless'],
+  ['Someone plays music on their computer and you find it really <b>distracting/distracted</b>.', 'distracting'],
+  ['You arrive at work to find your favourite cup has been knocked off your desk and <b>smashed/jammed</b> to pieces.', 'smashed'],
+  ['A fellow worker has a go <b>at/to</b> you about being late in front of everyone.', 'at'],
+  ['The printer keeps getting <b>jammed/smashed</b> with paper and nobody fixes it.', 'jammed'],
+  ['One of your major <b>irritations/irritates</b> is that your boss sends you emails after hours.', 'irritations'],
+  ["There's a lot of pressure to wear expensive clothes and have the latest <b>budget/gadget</b>.", 'gadget']
+];
+const workList = document.getElementById('workList');
+workItems.forEach((w,i)=>{
+  const li = document.createElement('li');
+  li.innerHTML = `<div>${i+1}. ${w[0]}</div>
+    <div class='controls'>
+      <button class='toggle' data-val='${w[0].match(/<b>([^\/]+)\//)[1].trim() }'>${w[0].match(/<b>([^\/]+)\//)[1].trim()}</button>
+      <button class='toggle' data-val='${w[0].match(/\/([^<]+)<\/b>/)[1].trim()}'>${w[0].match(/\/([^<]+)<\/b>/)[1].trim()}</button>
+    </div>`;
+  li.dataset.correct = w[1];
+  workList.appendChild(li);
+});
+workList.addEventListener('click', (e)=>{
+  if(e.target.classList.contains('toggle')){
+    const li = e.target.closest('li');
+    li.querySelectorAll('.toggle').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    li.dataset.pick = e.target.dataset.val;
+  }
+});
+document.getElementById('checkWork').onclick = ()=>{
+  let right=0,total=workItems.length;
+  workList.querySelectorAll('li').forEach(li=>{
+    const ok = (li.dataset.pick||'')===li.dataset.correct;
+    if(ok) right++;
+    li.style.outline = ok? '3px solid #236d36' : '3px solid #8b2b2b';
+  });
+  document.getElementById('resWork').textContent = `Score: ${right} / ${total}`;
+  markDone(document.querySelector('[data-ex="work"]'));
+};
+document.getElementById('showKeyWork').onclick = ()=>{
+  const box = document.getElementById('keyWork');
+  box.classList.toggle('show');
+  box.innerHTML = '<b>Key:</b> ' + workItems.map((w,i)=>`${i+1} → <b>${w[1]}</b>`).join('; ');
+};
+
+// initial
+updateProgress();
+</script>
+</body>
+</html>
